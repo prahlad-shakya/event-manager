@@ -1,0 +1,267 @@
+/* css/style.css - Main Styling Sheet */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background-color: #f8f9fa;
+    color: #1e293b;
+}
+
+/* Header & Navigation */
+.navbar {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.navbar-brand {
+    font-weight: 800;
+    font-size: 1.3rem;
+    color: #4f46e5 !important;
+}
+
+/* Modern Hero Banner with Overlay Image */
+.hero-section {
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.88) 0%, rgba(30, 27, 75, 0.88) 100%), 
+                url('https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=1600&auto=format&fit=crop') center/cover no-repeat;
+    color: #ffffff;
+    padding: 6rem 0 7rem 0;
+    position: relative;
+    border-radius: 0 0 2rem 2rem;
+}
+
+.hero-title {
+    font-size: 3rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+}
+
+/* Statistics Bar */
+.stat-card {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 1rem;
+    padding: 1.25rem;
+    text-align: center;
+}
+
+.stat-number {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: #38bdf8;
+    margin-bottom: 0.2rem;
+}
+
+/* Floating Search Bar Container */
+.search-card {
+    background: #ffffff;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    margin-top: -3.5rem;
+    position: relative;
+    z-index: 10;
+}
+
+/* Interactive Category & Quick Filters */
+.category-pill {
+    padding: 0.45rem 1.15rem;
+    border-radius: 50rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #64748b;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.category-pill:hover, 
+.category-pill.active {
+    background: #4f46e5;
+    color: #ffffff;
+    border-color: #4f46e5;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+}
+
+/* Event Cards Layout */
+.event-card {
+    border: none;
+    border-radius: 1.25rem;
+    overflow: hidden;
+    background: #ffffff;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.event-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.card-img-wrapper {
+    position: relative;
+    height: 200px;
+    overflow: hidden;
+    background-color: #e2e8f0;
+}
+
+.card-img-top {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.event-card:hover .card-img-top {
+    transform: scale(1.05);
+}
+
+.badge-featured {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 0.75rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 50rem;
+    letter-spacing: 0.05em;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.badge-category {
+    position: absolute;
+    bottom: 1rem;
+    left: 1rem;
+    background: rgba(15, 23, 42, 0.75);
+    backdrop-filter: blur(4px);
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 0.75rem;
+    padding: 0.3rem 0.75rem;
+    border-radius: 50rem;
+}
+
+.card-body {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    flex-grow: 1;
+}
+
+.event-title {
+    font-weight: 700;
+    font-size: 1.2rem;
+    color: #0f172a;
+    margin-bottom: 0.75rem;
+    line-height: 1.35;
+}
+
+.meta-item {
+    font-size: 0.875rem;
+    color: #64748b;
+    margin-bottom: 0.4rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.meta-item i {
+    color: #4f46e5;
+    width: 16px;
+}
+
+.price-badge {
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+/* Sponsor Logobar */
+.sponsor-logo {
+    font-weight: 800;
+    font-size: 1.2rem;
+    color: #94a3b8;
+    letter-spacing: 0.05em;
+    transition: color 0.2s ease;
+}
+
+.sponsor-logo:hover {
+    color: #4f46e5;
+}
+
+/* Organizer CTA Section */
+.organizer-cta-box {
+    background: linear-gradient(135deg, #312e81 0%, #4f46e5 100%);
+    border-radius: 1.5rem;
+    color: #ffffff;
+    padding: 3.5rem 2rem;
+}
+
+/* Testimonial Cards */
+.testimonial-card {
+    background: #ffffff;
+    border-radius: 1.25rem;
+    padding: 2rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    border: 1px solid #f1f5f9;
+    height: 100%;
+}
+
+.avatar-img {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+/* Newsletter Container */
+.newsletter-box {
+    background: #1e293b;
+    border-radius: 1.5rem;
+    color: #ffffff;
+    padding: 3rem 2rem;
+}
+
+/* Custom Buttons & General UI */
+.btn-primary-custom {
+    background-color: #4f46e5;
+    border: none;
+    color: #ffffff;
+    font-weight: 600;
+    padding: 0.6rem 1.2rem;
+    border-radius: 0.75rem;
+    transition: all 0.2s ease;
+}
+
+.btn-primary-custom:hover {
+    background-color: #4338ca;
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+}
+
+.empty-box {
+    background: #ffffff;
+    border-radius: 1.5rem;
+    padding: 4rem 2rem;
+    text-align: center;
+    border: 2px dashed #cbd5e1;
+}
+
+.footer-link {
+    color: #64748b;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.footer-link:hover {
+    color: #4f46e5;
+}

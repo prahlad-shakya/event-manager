@@ -327,10 +327,88 @@ $total_organizers   = $pdo->query("SELECT COUNT(DISTINCT user_id) FROM users WHE
         <?php endif; ?>
     </main>
 
-    <!-- Footer -->
+    <!-- RESTORED: How It Works Section -->
+    <section id="how-it-works" class="py-5 bg-light border-top border-bottom">
+        <div class="container py-4">
+            <div class="text-center mb-5">
+                <h2 class="fw-bold text-dark">How It Works</h2>
+                <p class="text-muted">Simple steps to attend or organize your next event</p>
+            </div>
+            <div class="row g-4 text-center">
+                <div class="col-md-4">
+                    <div class="p-4 bg-white rounded-4 shadow-sm h-100">
+                        <div class="mb-3 text-primary display-5"><i class="fa-solid fa-magnifying-glass-location"></i></div>
+                        <h4 class="fw-bold mb-2">1. Find Events</h4>
+                        <p class="text-muted small mb-0">Browse through categories or search by location and dates to find events matching your interest.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-4 bg-white rounded-4 shadow-sm h-100">
+                        <div class="mb-3 text-primary display-5"><i class="fa-solid fa-ticket"></i></div>
+                        <h4 class="fw-bold mb-2">2. Reserve Tickets</h4>
+                        <p class="text-muted small mb-0">Select your tickets instantly with zero hidden fees and instant email confirmation.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-4 bg-white rounded-4 shadow-sm h-100">
+                        <div class="mb-3 text-primary display-5"><i class="fa-solid fa-qrcode"></i></div>
+                        <h4 class="fw-bold mb-2">3. Enjoy the Experience</h4>
+                        <p class="text-muted small mb-0">Show your ticket badge at the entry gate and enjoy an unforgettable experience!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- RESTORED: Organizer CTA Section -->
+    <section class="py-5 bg-white">
+        <div class="container py-4">
+            <div class="row align-items-center bg-primary text-white p-4 p-md-5 rounded-4 shadow-sm">
+                <div class="col-lg-8 mb-3 mb-lg-0">
+                    <h3 class="fw-bold mb-2">Are you an Event Organizer?</h3>
+                    <p class="mb-0 opacity-75">Publish your events, manage ticket inventory live, and track real-time bookings from your personal dashboard.</p>
+                </div>
+                <div class="col-lg-4 text-lg-end">
+                    <a href="register.php" class="btn btn-light btn-lg rounded-pill fw-bold text-primary px-4 py-2">Host an Event</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- RESTORED: Complete Footer -->
     <footer class="bg-white border-top pt-5 pb-4">
-        <div class="container text-center text-muted small">
-            <p class="mb-0">&copy; <?= date('Y'); ?> Event Management Portal. All rights reserved.</p>
+        <div class="container">
+            <div class="row g-4 mb-4">
+                <div class="col-md-5">
+                    <h5 class="fw-bold text-dark d-flex align-items-center gap-2 mb-3">
+                        <i class="fa-solid fa-bolt text-primary"></i> Event Management Portal
+                    </h5>
+                    <p class="text-muted small pe-md-4">
+                        Discover, create, and manage tickets for premier conferences, tech summits, live concerts, and sporting events worldwide.
+                    </p>
+                </div>
+                <div class="col-md-3">
+                    <h6 class="fw-bold text-dark mb-3">Quick Links</h6>
+                    <ul class="list-unstyled small text-muted">
+                        <li class="mb-2"><a href="index.php" class="text-decoration-none text-muted">Explore Events</a></li>
+                        <li class="mb-2"><a href="#how-it-works" class="text-decoration-none text-muted">How It Works</a></li>
+                        <li class="mb-2"><a href="register.php" class="text-decoration-none text-muted">Register Account</a></li>
+                        <li class="mb-2"><a href="login.php" class="text-decoration-none text-muted">Sign In</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <h6 class="fw-bold text-dark mb-3">Event Categories</h6>
+                    <div class="d-flex flex-wrap gap-2">
+                        <a href="index.php?category=Technology" class="btn btn-sm btn-light text-muted">Technology</a>
+                        <a href="index.php?category=Music" class="btn btn-sm btn-light text-muted">Music</a>
+                        <a href="index.php?category=Business" class="btn btn-sm btn-light text-muted">Business</a>
+                        <a href="index.php?category=Sports" class="btn btn-sm btn-light text-muted">Sports</a>
+                    </div>
+                </div>
+            </div>
+            <div class="border-top pt-3 text-center text-muted small">
+                <p class="mb-0">&copy; <?= date('Y'); ?> Event Management Portal. All rights reserved.</p>
+            </div>
         </div>
     </footer>
 

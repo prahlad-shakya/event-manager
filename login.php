@@ -101,10 +101,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <label class="form-label fw-semibold small">Email Address</label>
                         <input type="email" name="email" class="form-control" placeholder="name@example.com" value="<?= htmlspecialchars($_POST['email'] ?? ''); ?>" required>
                     </div>
+                    
+                    <!-- Password Field with Forgot Password Link -->
                     <div class="mb-3">
-                        <label class="form-label fw-semibold small">Password</label>
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="form-label fw-semibold small mb-0">Password</label>
+                            <a href="reset-password.php" class="small text-decoration-none text-primary fw-semibold">Forgot Password?</a>
+                        </div>
                         <input type="password" name="password" class="form-control" placeholder="••••••••" required>
                     </div>
+
                     <button type="submit" class="btn btn-primary-custom w-100 py-2 fw-bold rounded-3">Sign In</button>
                 </form>
 

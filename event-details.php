@@ -4,13 +4,16 @@ session_start();
 require_once 'config/db.php';
 
 $event_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
-$error = '';
 $success = '';
 
+if (isset($_GET['success']) && $_GET['success'] == 1) {
+    $success = "Congratulations! Your ticket booking has been successfully confirmed.";
+}
+
 // Fetch Event Details
-$stmt = $pdo->prepare("SELECT e.*, u.full_name as organizer_name 
+$stmt = $pdo->prepare("SELECT e.*, u.name as organizer_name 
                       FROM events e 
-                      JOIN users u ON e.organizer_id = u.user_id 
+                      JOIN users u ON e.organizer_id = u.id 
                       WHERE e.event_id = ?");
 $stmt->execute([$event_id]);
 $event = $stmt->fetch();
@@ -18,66 +21,6 @@ $event = $stmt->fetch();
 if (!$event) {
     header("Location: index.php");
     exit();
-}
-
-// Handle Booking Form Submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['book_ticket'])) {
-    if (!isset($_SESSION['user_id'])) {
-        // Redirect to login if user isn't signed in
-        header("Location: login.php?redirect=" . urlencode("event-details.php?id=" . $event_id));
-        exit();
-    }
-
-    $user_id  = $_SESSION['user_id'];
-    $quantity = isset($_POST['quantity']) ? intval($_POST['quantity']) : 1;
-
-    if ($quantity < 1) {
-        $error = "Please select at least 1 ticket.";
-    } elseif ($quantity > $event['available_tickets']) {
-        $error = "Not enough tickets available. Only " . $event['available_tickets'] . " left.";
-    } else {
-        $total_price = $quantity * $event['ticket_price'];
-
-        try {
-            // Begin Database Transaction
-            $pdo->beginTransaction();
-
-            // 1. Insert Record into Bookings Table
-            $booking_sql = "INSERT INTO bookings (event_id, user_id, quantity, total_price, booking_date) 
-                            VALUES (:event_id, :user_id, :quantity, :total_price, NOW())";
-            $booking_stmt = $pdo->prepare($booking_sql);
-            $booking_stmt->execute([
-                ':event_id'    => $event_id,
-                ':user_id'     => $user_id,
-                ':quantity'    => $quantity,
-                ':total_price' => $total_price
-            ]);
-
-            // 2. Reduce Available Tickets Count in Events Table
-            $update_sql = "UPDATE events 
-                           SET available_tickets = available_tickets - :qty 
-                           WHERE event_id = :event_id AND available_tickets >= :req_qty";
-            $update_stmt = $pdo->prepare($update_sql);
-            $update_stmt->execute([
-                ':qty'      => $quantity,
-                ':req_qty'  => $quantity,
-                ':event_id' => $event_id
-            ]);
-
-            // Commit Transaction
-            $pdo->commit();
-
-            $success = "Congratulations! Your booking for " . $quantity . " ticket(s) is confirmed.";
-
-            // Refresh event data to update available ticket count on page
-            $stmt->execute([$event_id]);
-            $event = $stmt->fetch();
-
-        } catch (Exception $e) {
-            $pdo->rollBack();
-            $error = "An error occurred while processing your booking: " . $e->getMessage();
-        }
-    }
 }
 ?>
 
@@ -105,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['book_ticket'])) {
                 <a href="index.php" class="btn btn-sm btn-outline-secondary rounded-pill px-3">Explore Events</a>
                 <?php if (isset($_SESSION['user_id'])): ?>
                     <span class="btn btn-light btn-sm rounded-pill px-3 pe-none fw-semibold">
-                        <i class="fa-solid fa-user text-primary me-1"></i> <?= htmlspecialchars($_SESSION['full_name']); ?>
+                        <i class="fa-solid fa-user text-primary me-1"></i> <?= htmlspecialchars($_SESSION['full_name'] ?? $_SESSION['name'] ?? 'User'); ?>
                     </span>
                     <a href="logout.php" class="btn btn-sm btn-outline-danger rounded-pill px-3">Logout</a>
                 <?php else: ?>
@@ -126,17 +69,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['book_ticket'])) {
             </ol>
         </nav>
 
-        <!-- Feedback Messages -->
+        <!-- Feedback Message -->
         <?php if (!empty($success)): ?>
             <div class="alert alert-success alert-dismissible fade show rounded-3 mb-4" role="alert">
                 <i class="fa-solid fa-circle-check me-2"></i> <?= htmlspecialchars($success); ?>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        <?php endif; ?>
-
-        <?php if (!empty($error)): ?>
-            <div class="alert alert-danger alert-dismissible fade show rounded-3 mb-4" role="alert">
-                <i class="fa-solid fa-triangle-exclamation me-2"></i> <?= htmlspecialchars($error); ?>
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         <?php endif; ?>
@@ -160,6 +96,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['book_ticket'])) {
                 </div>
 
                 <h1 class="fw-bold mb-3"><?= htmlspecialchars($event['title']); ?></h1>
+                
+                <p class="text-muted mb-4">
+                    <i class="fa-solid fa-user-tie text-primary me-1"></i> Hosted by: <span class="fw-semibold text-dark"><?= htmlspecialchars($event['organizer_name']); ?></span>
+                </p>
 
                 <div class="row g-3 mb-4">
                     <div class="col-md-4">
@@ -210,8 +150,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['book_ticket'])) {
                     </div>
 
                     <?php if ($event['available_tickets'] > 0): ?>
-                        <form action="event-details.php?id=<?= $event['event_id']; ?>" method="POST">
-                            <input type="hidden" name="book_ticket" value="1">
+                        <form action="checkout.php" method="GET">
+                            <input type="hidden" name="id" value="<?= $event['event_id']; ?>">
 
                             <div class="mb-3">
                                 <label for="quantity" class="form-label small fw-semibold text-uppercase text-muted">Select Tickets</label>
@@ -229,8 +169,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['book_ticket'])) {
                                 </span>
                             </div>
 
-                            <button type="submit" class="btn btn-primary-custom w-100 py-3 fw-bold rounded-3 shadow-sm">
-                                <i class="fa-solid fa-ticket me-2"></i> Confirm & Book Ticket
+                            <button type="submit" class="btn btn-primary w-100 py-3 fw-bold rounded-3 shadow-sm">
+                                <i class="fa-solid fa-arrow-right me-2"></i> Proceed to Checkout
                             </button>
                         </form>
                     <?php else: ?>
@@ -240,7 +180,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['book_ticket'])) {
                     <?php endif; ?>
 
                     <div class="text-center mt-3 pt-3 border-top text-muted small">
-                        <i class="fa-solid fa-shield-halved me-1 text-success"></i> Instant E-Ticket delivered to your profile.
+                        <i class="fa-solid fa-shield-halved me-1 text-success"></i> Secure checkout powered by Event Portal.
                     </div>
                 </div>
             </div>

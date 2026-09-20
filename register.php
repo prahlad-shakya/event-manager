@@ -3,58 +3,96 @@
 session_start();
 require_once 'config/db.php';
 
-// Define your secret passcode here
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
+require 'vendor/autoload.php'; // Adjust path if PHPMailer is placed in a custom folder
+
 define('ADMIN_PASSCODE', 'ADMIN');
 
 $error = '';
 $success = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $full_name      = trim($_POST['full_name']);
-    $email          = trim($_POST['email']);
-    $password       = $_POST['password'];
-    $selected_role  = $_POST['role'] ?? 'attendee';
-    $admin_code     = trim($_POST['admin_code'] ?? '');
+    $full_name     = trim($_POST['full_name'] ?? '');
+    $email         = trim($_POST['email'] ?? '');
+    $password      = $_POST['password'] ?? '';
+    $selected_role = $_POST['role'] ?? 'attendee';
+    $admin_code    = trim($_POST['admin_code'] ?? '');
 
-    // Validation
     if (empty($full_name) || empty($email) || empty($password)) {
         $error = "Please fill in all required fields.";
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error = "Please provide a valid email address.";
     } else {
-        // Check if email already exists
         $stmt = $pdo->prepare("SELECT user_id FROM users WHERE email = :email");
         $stmt->execute(['email' => $email]);
         
         if ($stmt->fetch()) {
             $error = "An account with this email address already exists.";
         } else {
-            // Determine Role based on Passcode
-            $final_role = 'attendee'; // Default role matching your database schema
+            $final_role = 'attendee';
 
             if ($selected_role === 'organizer') {
                 if ($admin_code === ADMIN_PASSCODE) {
                     $final_role = 'organizer';
                 } else {
-                    $error = "Invalid Admin Passcode. You cannot register as an Organizer/Admin without the correct authorization key.";
+                    $error = "Invalid Admin Passcode. You cannot register as an Organizer without authorization.";
                 }
             }
 
-            // If no errors, proceed with registration
             if (empty($error)) {
                 $hashed_password = password_hash($password, PASSWORD_BCRYPT);
+                $verification_token = bin2hex(random_bytes(32));
 
-                // Insert query using your exact column names: password_hash, role, is_verified
-                $insert_stmt = $pdo->prepare("INSERT INTO users (full_name, email, password_hash, role, is_verified, created_at) VALUES (:full_name, :email, :password_hash, :role, 1, NOW())");
+                // Insert user with is_verified = 0 and save verification_token
+                $insert_stmt = $pdo->prepare("INSERT INTO users (full_name, email, password_hash, role, is_verified, reset_token, created_at) VALUES (:full_name, :email, :password_hash, :role, 0, :token, NOW())");
+                
                 $registered = $insert_stmt->execute([
                     'full_name'     => $full_name,
                     'email'         => $email,
                     'password_hash' => $hashed_password,
-                    'role'          => $final_role
+                    'role'          => $final_role,
+                    'token'         => $verification_token
                 ]);
 
                 if ($registered) {
-                    $success = "Account created successfully! You can now log in.";
+                    // Send Email Verification via PHPMailer
+                    $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http";
+                    $verify_link = $protocol . "://" . $_SERVER['HTTP_HOST'] . "/event_portal/verify.php?token=" . $verification_token;
+
+                    $mail = new PHPMailer(true);
+
+                    try {
+                        $mail->isSMTP();
+                        $mail->Host       = 'smtp.gmail.com';
+                        $mail->SMTPAuth   = true;
+                        $mail->Username   = 'prahladshakya9872@gmail.com'; // Your Gmail address
+                        $mail->Password   = 'bdjcxpfmpdnodnsm';   // Paste your 16-character Google App Password here
+                        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+                        $mail->Port       = 587;
+
+                        $mail->setFrom('prahladshakya9872@gmail.com', 'Event Portal');
+                        $mail->addAddress($email, $full_name);
+
+                        $mail->isHTML(true);
+                        $mail->Subject = 'Verify Your Account - Event Portal';
+                        $mail->Body    = "
+                            <div style='font-family: Arial, sans-serif; padding: 20px; color: #333;'>
+                                <h2>Welcome to Event Portal!</h2>
+                                <p>Hello " . htmlspecialchars($full_name) . ",</p>
+                                <p>Thank you for registering. Please verify your email address to activate your account:</p>
+                                <p style='margin: 25px 0;'>
+                                    <a href='{$verify_link}' style='background-color: #4F46E5; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;'>Verify Email Address</a>
+                                </p>
+                            </div>
+                        ";
+
+                        $mail->send();
+                        $success = "Account created! Check your inbox to verify your email before logging in.";
+                    } catch (Exception $e) {
+                        $error = "Account created, but verification email failed to send: " . $mail->ErrorInfo;
+                    }
                 } else {
                     $error = "Registration failed. Please try again.";
                 }
@@ -66,7 +104,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -75,7 +112,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
 </head>
-
 <body class="bg-light d-flex align-items-center min-vh-100 py-5">
 
     <div class="container">
@@ -119,7 +155,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <input type="password" class="form-control" id="password" name="password" required placeholder="Create a strong password">
                         </div>
 
-                        <!-- Role Selection -->
                         <div class="mb-3">
                             <label for="role" class="form-label fw-semibold">Account Type *</label>
                             <select class="form-select" id="role" name="role" onchange="toggleAdminCodeField(this.value)">
@@ -128,7 +163,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </select>
                         </div>
 
-                        <!-- Admin Security Passcode Field -->
                         <div class="mb-3 d-none" id="admin_code_wrapper">
                             <label for="admin_code" class="form-label fw-semibold text-danger">
                                 <i class="fa-solid fa-key me-1"></i> Admin Security Passcode *
@@ -151,7 +185,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     </div>
 
-    <!-- Toggle Admin Passcode JavaScript -->
     <script>
         function toggleAdminCodeField(role) {
             const wrapper = document.getElementById('admin_code_wrapper');
@@ -168,5 +201,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     </script>
 </body>
-
 </html>

@@ -10,9 +10,9 @@ $location  = isset($_GET['location']) ? trim($_GET['location']) : '';
 $timeframe = isset($_GET['timeframe']) ? trim($_GET['timeframe']) : '';
 
 // Base Query
-$sql = "SELECT e.*, u.full_name as organizer_name 
+$sql = "SELECT e.*, u.name as organizer_name 
         FROM events e 
-        JOIN users u ON e.organizer_id = u.user_id 
+        JOIN users u ON e.organizer_id = u.id 
         WHERE 1=1";
 $params = [];
 
@@ -52,7 +52,7 @@ $events = $stmt->fetchAll();
 // Dynamic Counters
 $total_events_count = $pdo->query("SELECT COUNT(*) FROM events")->fetchColumn();
 $total_tickets_sold = $pdo->query("SELECT IFNULL(SUM(total_tickets - available_tickets), 0) FROM events")->fetchColumn();
-$total_organizers   = $pdo->query("SELECT COUNT(DISTINCT user_id) FROM users WHERE role = 'organizer'")->fetchColumn();
+$total_organizers   = $pdo->query("SELECT COUNT(DISTINCT id) FROM users WHERE role = 'organizer'")->fetchColumn();
 ?>
 
 <!DOCTYPE html>
@@ -69,22 +69,69 @@ $total_organizers   = $pdo->query("SELECT COUNT(DISTINCT user_id) FROM users WHE
 
     <!-- External Custom CSS File -->
     <link rel="stylesheet" href="css/style.css">
+
+    <!-- Inline Professional Mobile Navbar Custom Styling -->
+    <style>
+        @media (max-width: 991.98px) {
+            .navbar {
+                position: relative;
+            }
+
+            .navbar-collapse {
+                display: none;
+                background: #ffffff;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                padding: 1rem 1.5rem 1.5rem 1.5rem;
+                border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+                box-shadow: 0 15px 30px rgba(0, 0, 0, 0.08);
+                z-index: 1000;
+            }
+
+            .navbar-collapse.show {
+                display: block !important;
+            }
+
+            .navbar-nav .nav-item {
+                width: 100%;
+                text-align: left;
+                padding: 0.5rem 0;
+                border-bottom: 1px solid #f1f3f5;
+            }
+
+            .navbar-nav .nav-item:last-child {
+                border-bottom: none;
+            }
+
+            .navbar-nav .nav-link {
+                padding: 0.3rem 0;
+            }
+
+            .navbar-nav .btn {
+                width: 100%;
+                justify-content: center;
+                margin-top: 0.5rem;
+            }
+        }
+    </style>
 </head>
 
 <body>
 
     <!-- Header Navigation -->
-    <nav class="navbar navbar-expand-lg sticky-top">
+    <nav class="navbar navbar-expand-lg sticky-top bg-white border-bottom shadow-sm">
         <div class="container">
-            <a class="navbar-brand d-flex align-items-center gap-2" href="index.php">
-                <i class="fa-solid fa-bolt"></i> Event Management Portal
+            <a class="navbar-brand d-flex align-items-center gap-2 fw-bold text-primary" href="index.php">
+                <i class="fa-solid fa-bolt"></i> Event Portal
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <button id="mobileMenuBtn" class="navbar-toggler border-0 shadow-none" type="button" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto align-items-lg-center gap-2 mt-3 mt-lg-0">
-                    <li class="nav-item"><a class="nav-link active fw-semibold" href="index.php">Explore Events</a></li>
+                <ul class="navbar-nav ms-auto align-items-lg-center gap-2 mt-2 mt-lg-0">
+                    <li class="nav-item"><a class="nav-link active fw-semibold" href="#explore-section">Explore Events</a></li>
                     <li class="nav-item"><a class="nav-link fw-semibold" href="#how-it-works">How It Works</a></li>
 
                     <?php if (isset($_SESSION['user_id'])): ?>
@@ -98,15 +145,15 @@ $total_organizers   = $pdo->query("SELECT COUNT(DISTINCT user_id) FROM users WHE
 
                         <!-- Logged In: User Display Badge -->
                         <li class="nav-item ms-lg-2">
-                            <span class="btn btn-light px-3 rounded-pill fw-semibold d-inline-flex align-items-center pe-none">
+                            <span class="btn btn-light px-3 rounded-pill fw-semibold d-inline-flex align-items-center justify-content-center pe-none">
                                 <i class="fa-solid fa-circle-user me-1 text-primary"></i>
-                                <span><?= htmlspecialchars($_SESSION['full_name']); ?></span>
+                                <span><?= htmlspecialchars($_SESSION['full_name'] ?? $_SESSION['name'] ?? 'User'); ?></span>
                             </span>
                         </li>
 
                         <!-- Logged In: Direct Logout Button -->
                         <li class="nav-item">
-                            <a class="btn btn-outline-danger rounded-pill px-3 fw-semibold d-inline-flex align-items-center" href="logout.php">
+                            <a class="btn btn-outline-danger rounded-pill px-3 fw-semibold d-inline-flex align-items-center justify-content-center" href="logout.php">
                                 <i class="fa-solid fa-right-from-bracket me-1"></i> Logout
                             </a>
                         </li>
@@ -114,7 +161,7 @@ $total_organizers   = $pdo->query("SELECT COUNT(DISTINCT user_id) FROM users WHE
                         <!-- Logged Out Navigation -->
                         <li class="nav-item"><a class="nav-link fw-semibold" href="login.php">Sign In</a></li>
                         <li class="nav-item">
-                            <a class="btn btn-primary-custom rounded-pill px-4" href="register.php">Get Started</a>
+                            <a class="btn btn-primary rounded-pill px-4 text-white" href="register.php">Get Started</a>
                         </li>
                     <?php endif; ?>
                 </ul>
@@ -123,9 +170,9 @@ $total_organizers   = $pdo->query("SELECT COUNT(DISTINCT user_id) FROM users WHE
     </nav>
 
     <!-- Hero Banner with Stats Bar -->
-    <section class="hero-section">
-        <div class="container text-center">
-            <h1 class="hero-title mb-3">Discover Extraordinary<br>Events Near You</h1>
+    <section class="hero-section py-5 bg-dark text-white">
+        <div class="container text-center py-4">
+            <h1 class="hero-title fw-bold mb-3">Discover Extraordinary<br>Events Near You</h1>
             <p class="lead opacity-75 max-w-2xl mx-auto fw-normal mb-5">
                 Book tickets for top tech summits, live concerts, business conferences, and sports events in seconds.
             </p>
@@ -133,26 +180,26 @@ $total_organizers   = $pdo->query("SELECT COUNT(DISTINCT user_id) FROM users WHE
             <!-- Live Statistics Counter Bar -->
             <div class="row g-3 justify-content-center max-w-4xl mx-auto">
                 <div class="col-6 col-md-3">
-                    <div class="stat-card">
-                        <div class="stat-number"><?= number_format($total_events_count); ?>+</div>
+                    <div class="stat-card p-3 bg-secondary bg-opacity-25 rounded-3">
+                        <div class="stat-number fs-3 fw-bold"><?= number_format($total_events_count); ?>+</div>
                         <div class="small opacity-75 text-uppercase fw-semibold">Active Events</div>
                     </div>
                 </div>
                 <div class="col-6 col-md-3">
-                    <div class="stat-card">
-                        <div class="stat-number"><?= number_format($total_tickets_sold); ?>+</div>
+                    <div class="stat-card p-3 bg-secondary bg-opacity-25 rounded-3">
+                        <div class="stat-number fs-3 fw-bold"><?= number_format($total_tickets_sold); ?>+</div>
                         <div class="small opacity-75 text-uppercase fw-semibold">Tickets Booked</div>
                     </div>
                 </div>
                 <div class="col-6 col-md-3">
-                    <div class="stat-card">
-                        <div class="stat-number"><?= number_format(max($total_organizers, 12)); ?>+</div>
+                    <div class="stat-card p-3 bg-secondary bg-opacity-25 rounded-3">
+                        <div class="stat-number fs-3 fw-bold"><?= number_format(max($total_organizers, 12)); ?>+</div>
                         <div class="small opacity-75 text-uppercase fw-semibold">Event Hosts</div>
                     </div>
                 </div>
                 <div class="col-6 col-md-3">
-                    <div class="stat-card">
-                        <div class="stat-number">99.8%</div>
+                    <div class="stat-card p-3 bg-secondary bg-opacity-25 rounded-3">
+                        <div class="stat-number fs-3 fw-bold">99.8%</div>
                         <div class="small opacity-75 text-uppercase fw-semibold">Happy Guests</div>
                     </div>
                 </div>
@@ -161,8 +208,8 @@ $total_organizers   = $pdo->query("SELECT COUNT(DISTINCT user_id) FROM users WHE
     </section>
 
     <!-- Search Bar with City & Time Filters -->
-    <div class="container mb-5">
-        <div class="search-card">
+    <div id="explore-section" class="container my-5">
+        <div class="search-card p-4 bg-white shadow-sm rounded-4 border">
             <form action="index.php" method="GET" class="row g-3 align-items-center">
                 <div class="col-lg-3 col-md-6">
                     <div class="input-group">
@@ -200,28 +247,19 @@ $total_organizers   = $pdo->query("SELECT COUNT(DISTINCT user_id) FROM users WHE
                     </div>
                 </div>
                 <div class="col-lg-2 d-flex gap-2">
-                    <button type="submit" class="btn btn-primary-custom w-100 py-2">Find</button>
+                    <button type="submit" class="btn btn-primary w-100 py-2 text-white">Find</button>
                     <?php if (!empty($search) || !empty($category) || !empty($location) || !empty($timeframe)): ?>
                         <a href="index.php" class="btn btn-outline-secondary py-2" title="Reset Filters"><i class="fa-solid fa-rotate-left"></i></a>
                     <?php endif; ?>
                 </div>
             </form>
-
-            <div class="d-flex gap-2 flex-wrap mt-3 pt-3 border-top align-items-center">
-                <span class="text-muted fw-bold small me-2">Trending:</span>
-                <a href="index.php" class="category-pill <?= empty($category) ? 'active' : ''; ?>">All Events</a>
-                <a href="index.php?category=Technology" class="category-pill <?= $category === 'Technology' ? 'active' : ''; ?>"><i class="fa-solid fa-laptop-code me-1"></i> Tech</a>
-                <a href="index.php?category=Music" class="category-pill <?= $category === 'Music' ? 'active' : ''; ?>"><i class="fa-solid fa-music me-1"></i> Music</a>
-                <a href="index.php?category=Business" class="category-pill <?= $category === 'Business' ? 'active' : ''; ?>"><i class="fa-solid fa-briefcase me-1"></i> Business</a>
-                <a href="index.php?category=Sports" class="category-pill <?= $category === 'Sports' ? 'active' : ''; ?>"><i class="fa-solid fa-basketball me-1"></i> Sports</a>
-            </div>
         </div>
     </div>
 
     <!-- Main Events Directory -->
     <main class="container pb-5">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2 class="fw-bold m-0 text-slate-900">
+            <h2 class="fw-bold m-0 text-dark">
                 <?= !empty($category) ? htmlspecialchars($category) . ' Events' : 'Upcoming Featured Events'; ?>
             </h2>
             <span class="badge bg-primary-subtle text-primary fw-bold px-3 py-2 rounded-pill">
@@ -233,14 +271,14 @@ $total_organizers   = $pdo->query("SELECT COUNT(DISTINCT user_id) FROM users WHE
             <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
                 <?php foreach ($events as $event): ?>
                     <div class="col">
-                        <div class="card event-card h-100">
+                        <div class="card event-card h-100 shadow-sm border-0">
                             <!-- Clickable Image Wrapper -->
-                            <a href="event-details.php?id=<?= $event['event_id']; ?>" class="card-img-wrapper d-block text-decoration-none">
+                            <a href="event-details.php?id=<?= $event['event_id']; ?>" class="card-img-wrapper d-block text-decoration-none position-relative overflow-hidden">
                                 <?php if ($event['is_featured']): ?>
-                                    <span class="badge-featured"><i class="fa-solid fa-star me-1"></i> FEATURED</span>
+                                    <span class="badge bg-warning text-dark position-absolute top-0 start-0 m-2 px-2 py-1 fw-bold"><i class="fa-solid fa-star me-1"></i> FEATURED</span>
                                 <?php endif; ?>
 
-                                <span class="badge-category"><?= htmlspecialchars($event['category']); ?></span>
+                                <span class="badge bg-dark bg-opacity-75 position-absolute top-0 end-0 m-2 px-2 py-1"><?= htmlspecialchars($event['category']); ?></span>
 
                                 <?php
                                 $category_placeholders = [
@@ -258,34 +296,34 @@ $total_organizers   = $pdo->query("SELECT COUNT(DISTINCT user_id) FROM users WHE
                                     ? 'uploads/' . $event['image_url']
                                     : $default_img;
                                 ?>
-                                <img src="<?= htmlspecialchars($image_src); ?>" class="card-img-top" alt="<?= htmlspecialchars($event['title']); ?>">
+                                <img src="<?= htmlspecialchars($image_src); ?>" class="card-img-top object-fit-cover" style="height: 200px;" alt="<?= htmlspecialchars($event['title']); ?>">
                             </a>
 
                             <div class="card-body d-flex flex-column justify-content-between">
                                 <div>
                                     <h5 class="event-title mb-3">
-                                        <a href="event-details.php?id=<?= $event['event_id']; ?>" class="text-decoration-none text-dark">
+                                        <a href="event-details.php?id=<?= $event['event_id']; ?>" class="text-decoration-none text-dark fw-bold">
                                             <?= htmlspecialchars($event['title']); ?>
                                         </a>
                                     </h5>
 
-                                    <div class="meta-item">
-                                        <i class="fa-regular fa-calendar-check"></i>
+                                    <div class="meta-item text-muted small mb-1">
+                                        <i class="fa-regular fa-calendar-check me-1"></i>
                                         <span><?= date('d M Y • h:i A', strtotime($event['event_date'])); ?></span>
                                     </div>
-                                    <div class="meta-item">
-                                        <i class="fa-solid fa-location-dot"></i>
+                                    <div class="meta-item text-muted small mb-1">
+                                        <i class="fa-solid fa-location-dot me-1"></i>
                                         <span class="text-truncate"><?= htmlspecialchars($event['location']); ?></span>
                                     </div>
-                                    <div class="meta-item mb-3">
-                                        <i class="fa-regular fa-user"></i>
+                                    <div class="meta-item text-muted small mb-3">
+                                        <i class="fa-regular fa-user me-1"></i>
                                         <span>Hosted by <strong><?= htmlspecialchars($event['organizer_name']); ?></strong></span>
                                     </div>
                                 </div>
 
                                 <div class="pt-3 border-top">
                                     <div class="d-flex align-items-center justify-content-between mb-3">
-                                        <div class="price-badge">
+                                        <div class="price-badge fw-bold text-primary">
                                             <?= $event['ticket_price'] > 0 ? '$' . number_format($event['ticket_price'], 2) : 'Free'; ?>
                                         </div>
                                         <div class="small fw-semibold <?= ($event['available_tickets'] > 0) ? 'text-success' : 'text-danger'; ?>">
@@ -298,9 +336,9 @@ $total_organizers   = $pdo->query("SELECT COUNT(DISTINCT user_id) FROM users WHE
                                         <a href="event-details.php?id=<?= $event['event_id']; ?>" class="btn btn-outline-secondary btn-sm flex-fill fw-semibold py-2">
                                             <i class="fa-solid fa-circle-info me-1"></i> Details
                                         </a>
-                                        
+
                                         <?php if ($event['available_tickets'] > 0): ?>
-                                            <a href="event-details.php?id=<?= $event['event_id']; ?>" class="btn btn-primary-custom btn-sm flex-fill fw-semibold py-2">
+                                            <a href="event-details.php?id=<?= $event['event_id']; ?>" class="btn btn-primary btn-sm flex-fill fw-semibold py-2 text-white">
                                                 Book Now
                                             </a>
                                         <?php else: ?>
@@ -316,7 +354,7 @@ $total_organizers   = $pdo->query("SELECT COUNT(DISTINCT user_id) FROM users WHE
                 <?php endforeach; ?>
             </div>
         <?php else: ?>
-            <div class="empty-box my-4">
+            <div class="empty-box text-center py-5 my-4 bg-light rounded-4">
                 <div class="mb-3">
                     <i class="fa-solid fa-calendar-xmark text-muted display-4"></i>
                 </div>
@@ -327,93 +365,21 @@ $total_organizers   = $pdo->query("SELECT COUNT(DISTINCT user_id) FROM users WHE
         <?php endif; ?>
     </main>
 
-    <!-- RESTORED: How It Works Section -->
-    <section id="how-it-works" class="py-5 bg-light border-top border-bottom">
-        <div class="container py-4">
-            <div class="text-center mb-5">
-                <h2 class="fw-bold text-dark">How It Works</h2>
-                <p class="text-muted">Simple steps to attend or organize your next event</p>
-            </div>
-            <div class="row g-4 text-center">
-                <div class="col-md-4">
-                    <div class="p-4 bg-white rounded-4 shadow-sm h-100">
-                        <div class="mb-3 text-primary display-5"><i class="fa-solid fa-magnifying-glass-location"></i></div>
-                        <h4 class="fw-bold mb-2">1. Find Events</h4>
-                        <p class="text-muted small mb-0">Browse through categories or search by location and dates to find events matching your interest.</p>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="p-4 bg-white rounded-4 shadow-sm h-100">
-                        <div class="mb-3 text-primary display-5"><i class="fa-solid fa-ticket"></i></div>
-                        <h4 class="fw-bold mb-2">2. Reserve Tickets</h4>
-                        <p class="text-muted small mb-0">Select your tickets instantly with zero hidden fees and instant email confirmation.</p>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="p-4 bg-white rounded-4 shadow-sm h-100">
-                        <div class="mb-3 text-primary display-5"><i class="fa-solid fa-qrcode"></i></div>
-                        <h4 class="fw-bold mb-2">3. Enjoy the Experience</h4>
-                        <p class="text-muted small mb-0">Show your ticket badge at the entry gate and enjoy an unforgettable experience!</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- RESTORED: Organizer CTA Section -->
-    <section class="py-5 bg-white">
-        <div class="container py-4">
-            <div class="row align-items-center bg-primary text-white p-4 p-md-5 rounded-4 shadow-sm">
-                <div class="col-lg-8 mb-3 mb-lg-0">
-                    <h3 class="fw-bold mb-2">Are you an Event Organizer?</h3>
-                    <p class="mb-0 opacity-75">Publish your events, manage ticket inventory live, and track real-time bookings from your personal dashboard.</p>
-                </div>
-                <div class="col-lg-4 text-lg-end">
-                    <a href="register.php" class="btn btn-light btn-lg rounded-pill fw-bold text-primary px-4 py-2">Host an Event</a>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- RESTORED: Complete Footer -->
-    <footer class="bg-white border-top pt-5 pb-4">
-        <div class="container">
-            <div class="row g-4 mb-4">
-                <div class="col-md-5">
-                    <h5 class="fw-bold text-dark d-flex align-items-center gap-2 mb-3">
-                        <i class="fa-solid fa-bolt text-primary"></i> Event Management Portal
-                    </h5>
-                    <p class="text-muted small pe-md-4">
-                        Discover, create, and manage tickets for premier conferences, tech summits, live concerts, and sporting events worldwide.
-                    </p>
-                </div>
-                <div class="col-md-3">
-                    <h6 class="fw-bold text-dark mb-3">Quick Links</h6>
-                    <ul class="list-unstyled small text-muted">
-                        <li class="mb-2"><a href="index.php" class="text-decoration-none text-muted">Explore Events</a></li>
-                        <li class="mb-2"><a href="#how-it-works" class="text-decoration-none text-muted">How It Works</a></li>
-                        <li class="mb-2"><a href="register.php" class="text-decoration-none text-muted">Register Account</a></li>
-                        <li class="mb-2"><a href="login.php" class="text-decoration-none text-muted">Sign In</a></li>
-                    </ul>
-                </div>
-                <div class="col-md-4">
-                    <h6 class="fw-bold text-dark mb-3">Event Categories</h6>
-                    <div class="d-flex flex-wrap gap-2">
-                        <a href="index.php?category=Technology" class="btn btn-sm btn-light text-muted">Technology</a>
-                        <a href="index.php?category=Music" class="btn btn-sm btn-light text-muted">Music</a>
-                        <a href="index.php?category=Business" class="btn btn-sm btn-light text-muted">Business</a>
-                        <a href="index.php?category=Sports" class="btn btn-sm btn-light text-muted">Sports</a>
-                    </div>
-                </div>
-            </div>
-            <div class="border-top pt-3 text-center text-muted small">
-                <p class="mb-0">&copy; <?= date('Y'); ?> Event Management Portal. All rights reserved.</p>
-            </div>
-        </div>
-    </footer>
-
     <!-- Bootstrap 5 JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const btn = document.getElementById('mobileMenuBtn');
+            const nav = document.getElementById('navbarNav');
+
+            if (btn && nav) {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    nav.classList.toggle('show');
+                });
+            }
+        });
+    </script>
 
 </body>
 
